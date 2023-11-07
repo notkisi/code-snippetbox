@@ -1,2 +1,2 @@
-# code-snippetbox
+# snippetbox
 Go
