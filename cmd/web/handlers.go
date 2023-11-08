@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -34,15 +33,4 @@ func snippetCreate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	w.Header()["Date"] = nil
 	w.Write([]byte(`{"name" : "alex" }`))
-}
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
-
-	log.Print("Starting server on port: 4000")
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
 }
