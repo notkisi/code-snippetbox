@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/notkisi/snippetbox/internal/models"
@@ -18,10 +19,11 @@ type config struct {
 }
 
 type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	config   *config
-	snippets *models.SnippetModel
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	config        *config
+	snippets      *models.SnippetModel
+	templateCache templCache
 }
 
 func main() {
@@ -41,12 +43,34 @@ func main() {
 	}
 	defer db.Close()
 
-	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		config:   cfg,
-		snippets: &models.SnippetModel{DB: db},
+	templateCache := templCache{}
+	templateCache.update()
+	if err != nil {
+		errorLog.Fatal(err)
 	}
+
+	app := &application{
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		config:        cfg,
+		snippets:      &models.SnippetModel{DB: db},
+		templateCache: templateCache,
+	}
+
+	go func() {
+		// last modified = 1970
+		lastModified := time.Date(1970, 1, 1, 1, 1, 1, 1, time.UTC)
+		for true {
+			fileInfo, _ := os.Stat("./ui/html/pages/home.tmpl")
+			if fileInfo.ModTime().After(lastModified) {
+				// todo for all templates
+				app.infoLog.Println("Reloading templates")
+				app.templateCache.update()
+				lastModified = fileInfo.ModTime()
+			}
+			time.Sleep(time.Second)
+		}
+	}()
 
 	app.infoLog.Printf("Starting server on port: %s\n", cfg.addr)
 	srv := &http.Server{
@@ -54,6 +78,7 @@ func main() {
 		ErrorLog: app.errorLog,
 		Handler:  app.routes(),
 	}
+
 	err = srv.ListenAndServe()
 	app.errorLog.Fatal(err)
 }
