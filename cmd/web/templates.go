@@ -3,26 +3,28 @@ package main
 import (
 	"html/template"
 	"path/filepath"
+	"time"
 
 	"github.com/notkisi/snippetbox/internal/models"
 )
 
-type Subscriber interface {
-	update()
+var functions = template.FuncMap{
+	"humanDate": humanDate,
 }
 
 type templCache struct {
 	templateCache map[string]*template.Template
 }
 
-func (t *templCache) update() {
+func (t *templCache) Update() {
 	// todo properly handle error
 	t.templateCache, _ = newTemplateCache()
 }
 
 type templateData struct {
-	Snippet  *models.Snippet
-	Snippets []*models.Snippet
+	CurrentYear int
+	Snippet     *models.Snippet
+	Snippets    []*models.Snippet
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -38,7 +40,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		//strip full path
 		name := filepath.Base(page)
 
-		ts, err := template.ParseFiles("./ui/html/base.tmpl")
+		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl")
 		if err != nil {
 			return nil, err
 		}
@@ -56,4 +58,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		cache[name] = ts
 	}
 	return cache, nil
+}
+
+func humanDate(t time.Time) string {
+	return t.Format("02 Jan 2006 at 15:14")
 }
