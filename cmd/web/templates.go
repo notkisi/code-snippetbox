@@ -2,6 +2,7 @@ package main
 
 import (
 	"html/template"
+	"log"
 	"path/filepath"
 	"time"
 
@@ -18,7 +19,12 @@ type templCache struct {
 
 func (t *templCache) Update() {
 	// todo properly handle error
-	t.templateCache, _ = newTemplateCache()
+	var err error
+	t.templateCache, err = newTemplateCache()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }
 
 type templateData struct {

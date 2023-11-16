@@ -28,7 +28,13 @@ func (f *FSWatcher) StartFSWatcher() {
 
 	// Start listening for events.
 	go func() {
+		// defer func() {
+		// 	if err := recover(); err != nil {
+		// 		log.Print(fmt.Errorf("%s\n%s", err, debug.Stack()))
+		// 	}
+		// }()
 		for {
+
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {

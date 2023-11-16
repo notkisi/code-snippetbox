@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -45,6 +46,7 @@ func main() {
 
 	templateCache := &templCache{}
 	templateCache.Update()
+	fmt.Println(templateCache)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
