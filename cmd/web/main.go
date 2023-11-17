@@ -3,11 +3,11 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/notkisi/snippetbox/internal/fs"
 	"github.com/notkisi/snippetbox/internal/models"
@@ -25,6 +25,7 @@ type application struct {
 	config        *config
 	snippets      *models.SnippetModel
 	templateCache *templCache
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -46,7 +47,6 @@ func main() {
 
 	templateCache := &templCache{}
 	templateCache.Update()
-	fmt.Println(templateCache)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
@@ -63,6 +63,7 @@ func main() {
 		config:        cfg,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   form.NewDecoder(),
 	}
 
 	fsWatcher.StartFSWatcher()

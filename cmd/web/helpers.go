@@ -2,10 +2,14 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/go-playground/form/v4"
+	"github.com/notkisi/snippetbox/internal/validator"
 )
 
 func (a *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
@@ -47,4 +51,32 @@ func (a *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
 	}
+}
+
+func (a *application) decodePostForm(r *http.Request, dst any) error {
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	err = a.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		var invalidDecodeError *form.InvalidDecoderError
+		if errors.As(err, &invalidDecodeError) {
+			panic(err)
+		}
+	}
+	return nil
+}
+
+func (a *application) validateForm(form *snippetCreateForm) error {
+	form.CheckField(validator.NotBlank(form.Title), "title", "this field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "this field cant have more than 100 chars")
+	form.CheckField(validator.NotBlank(form.Content), "content", "this field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "this field must be one of 1 7 365")
+
+	if !form.Valid() {
+		return errors.New("Form is not valid")
+	}
+	return nil
 }

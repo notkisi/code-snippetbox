@@ -8,7 +8,15 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/notkisi/snippetbox/internal/models"
+	"github.com/notkisi/snippetbox/internal/validator"
 )
+
+type snippetCreateForm struct {
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
+}
 
 func (a *application) home(w http.ResponseWriter, r *http.Request) {
 	snippets, err := a.snippets.Latest()
@@ -45,20 +53,23 @@ func (a *application) snippetView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		a.clientError(w, http.StatusBadRequest)
-		return
-	}
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	var form snippetCreateForm
+	err := a.decodePostForm(r, &form)
 	if err != nil {
 		a.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	id, err := a.snippets.Insert(title, content, expires)
+	err = a.validateForm(&form)
+	if err != nil {
+		a.infoLog.Println(err)
+		data := a.newTemplateData(r)
+		data.Form = form
+		a.render(w, http.StatusUnprocessableEntity, "create.tmpl", data)
+		return
+	}
+
+	id, err := a.snippets.Insert(form.Title, form.Content, form.Expires)
 	if err != nil {
 		a.serverError(w, err)
 	}
@@ -68,5 +79,9 @@ func (a *application) snippetCreatePost(w http.ResponseWriter, r *http.Request) 
 
 func (a *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 	data := a.newTemplateData(r)
+
+	data.Form = snippetCreateForm{
+		Expires: 365,
+	}
 	a.render(w, http.StatusOK, "create.tmpl", data)
 }
