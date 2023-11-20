@@ -1,12 +1,16 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
+	"github.com/alexedwards/scs/mysqlstore"
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/notkisi/snippetbox/internal/fs"
@@ -20,12 +24,13 @@ type config struct {
 }
 
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	config        *config
-	snippets      *models.SnippetModel
-	templateCache *templCache
-	formDecoder   *form.Decoder
+	errorLog       *log.Logger
+	infoLog        *log.Logger
+	config         *config
+	snippets       *models.SnippetModel
+	templateCache  *templCache
+	formDecoder    *form.Decoder
+	sessionManager *scs.SessionManager
 }
 
 func main() {
@@ -45,6 +50,11 @@ func main() {
 	}
 	defer db.Close()
 
+	sessionManager := scs.New()
+	sessionManager.Store = mysqlstore.New(db)
+	sessionManager.Lifetime = 12 * time.Hour
+	sessionManager.Cookie.Secure = true
+
 	templateCache := &templCache{}
 	templateCache.Update()
 	if err != nil {
@@ -58,24 +68,34 @@ func main() {
 	}
 
 	app := &application{
-		errorLog:      errorLog,
-		infoLog:       infoLog,
-		config:        cfg,
-		snippets:      &models.SnippetModel{DB: db},
-		templateCache: templateCache,
-		formDecoder:   form.NewDecoder(),
+		errorLog:       errorLog,
+		infoLog:        infoLog,
+		config:         cfg,
+		snippets:       &models.SnippetModel{DB: db},
+		templateCache:  templateCache,
+		formDecoder:    form.NewDecoder(),
+		sessionManager: sessionManager,
 	}
 
 	fsWatcher.StartFSWatcher()
 
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
 	app.infoLog.Printf("Starting server on port: %s\n", cfg.addr)
 	srv := &http.Server{
-		Addr:     cfg.addr,
-		ErrorLog: app.errorLog,
-		Handler:  app.routes(),
+		Addr:      cfg.addr,
+		ErrorLog:  app.errorLog,
+		Handler:   app.routes(),
+		TLSConfig: tlsConfig,
+
+		//Server timeouts config
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
 	app.errorLog.Fatal(err)
 }
 

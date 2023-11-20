@@ -50,6 +50,7 @@ func (a *application) notFound(w http.ResponseWriter) {
 func (a *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
+		Flash:       a.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
 
