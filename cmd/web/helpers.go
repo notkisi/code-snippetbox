@@ -70,11 +70,25 @@ func (a *application) decodePostForm(r *http.Request, dst any) error {
 	return nil
 }
 
-func (a *application) validateForm(form *snippetCreateForm) error {
+func (a *application) validateSnippetForm(form *snippetCreateForm) error {
 	form.CheckField(validator.NotBlank(form.Title), "title", "this field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "this field cant have more than 100 chars")
 	form.CheckField(validator.NotBlank(form.Content), "content", "this field cannot be blank")
 	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "this field must be one of 1 7 365")
+
+	if !form.Valid() {
+		return errors.New("Form is not valid")
+	}
+	return nil
+}
+
+func (a *application) validateSignupForm(form *userSignupForm) error {
+	form.CheckField(validator.NotBlank(form.Name), "name", "this field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "this field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "this field cannot be blank")
+	form.CheckField(validator.MaxBytes(form.Password), "password", "password too long")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "must be min 8 chars long")
+	form.CheckField(validator.Matches(form.Email, validator.EmailRE), "email", "this field must be a valid email address")
 
 	if !form.Valid() {
 		return errors.New("Form is not valid")

@@ -28,6 +28,7 @@ type application struct {
 	infoLog        *log.Logger
 	config         *config
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templateCache  *templCache
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -72,6 +73,7 @@ func main() {
 		infoLog:        infoLog,
 		config:         cfg,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    form.NewDecoder(),
 		sessionManager: sessionManager,
@@ -89,7 +91,7 @@ func main() {
 		Handler:   app.routes(),
 		TLSConfig: tlsConfig,
 
-		//Server timeouts config
+		//Server HTTP timeouts config
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
