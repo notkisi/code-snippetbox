@@ -35,7 +35,6 @@ type application struct {
 }
 
 func main() {
-
 	cfg := &config{}
 	flag.StringVar(&cfg.addr, "addr", ":4000", "Http network address")
 	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")

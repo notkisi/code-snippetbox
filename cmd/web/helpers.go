@@ -9,8 +9,18 @@ import (
 	"time"
 
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 	"github.com/notkisi/snippetbox/internal/validator"
 )
+
+func (a *application) isAuthenticated(r *http.Request) bool {
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+
+	return isAuthenticated
+}
 
 func (a *application) render(w http.ResponseWriter, status int, page string, data *templateData) {
 	ts, ok := a.templateCache.templateCache[page]
@@ -49,8 +59,10 @@ func (a *application) notFound(w http.ResponseWriter) {
 
 func (a *application) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       a.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           a.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: a.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }
 
