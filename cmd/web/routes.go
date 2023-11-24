@@ -2,9 +2,11 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
+	"github.com/notkisi/snippetbox/internal/fs"
 	"github.com/notkisi/snippetbox/ui"
 )
 
@@ -16,7 +18,10 @@ func (app *application) routes() http.Handler {
 		app.notFound(w)
 	})
 
-	fileServer := http.FileServer(http.FS(ui.Files))
+	fileServer := http.FileServer(&fs.StaticFSWrapper{
+		FileSystem:   http.FS(ui.Files),
+		FixedModTime: time.Now().UTC(),
+	})
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)

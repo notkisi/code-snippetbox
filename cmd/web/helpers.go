@@ -86,7 +86,7 @@ func (a *application) validateSnippetForm(form *snippetCreateForm) error {
 	form.CheckField(validator.NotBlank(form.Title), "title", "this field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "this field cant have more than 100 chars")
 	form.CheckField(validator.NotBlank(form.Content), "content", "this field cannot be blank")
-	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "this field must be one of 1 7 365")
+	form.CheckField(validator.PermittedValue(form.Expires, 1, 7, 365), "expires", "this field must be one of 1 7 365")
 
 	if !form.Valid() {
 		return errors.New("Form is not valid")
