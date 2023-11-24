@@ -13,14 +13,12 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-playground/form/v4"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/notkisi/snippetbox/internal/fs"
 	"github.com/notkisi/snippetbox/internal/models"
 )
 
 type config struct {
-	addr      string
-	staticDir string
-	dsn       string
+	addr string
+	dsn  string
 }
 
 type application struct {
@@ -37,7 +35,6 @@ type application struct {
 func main() {
 	cfg := &config{}
 	flag.StringVar(&cfg.addr, "addr", ":4000", "Http network address")
-	flag.StringVar(&cfg.staticDir, "static-dir", "./ui/static", "Path to static assets")
 	flag.StringVar(&cfg.dsn, "dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 	flag.Parse()
 
@@ -61,12 +58,6 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
-	fsWatcher := &fs.FSWatcher{
-		ErrorLog: errorLog,
-		InfoLog:  infoLog,
-		Update:   templateCache.Update,
-	}
-
 	app := &application{
 		errorLog:       errorLog,
 		infoLog:        infoLog,
@@ -77,8 +68,6 @@ func main() {
 		formDecoder:    form.NewDecoder(),
 		sessionManager: sessionManager,
 	}
-
-	fsWatcher.StartFSWatcher()
 
 	tlsConfig := &tls.Config{
 		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
