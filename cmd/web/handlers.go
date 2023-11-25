@@ -32,6 +32,10 @@ type userSignupForm struct {
 	validator.Validator `form:"-"`
 }
 
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}
+
 // User related handlers
 func (a *application) userSignup(w http.ResponseWriter, r *http.Request) {
 	data := a.newTemplateData(r)

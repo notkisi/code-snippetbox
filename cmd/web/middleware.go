@@ -93,7 +93,7 @@ func secureHeaders(next http.Handler) http.Handler {
 		// do not try to deduce type from MIME
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
-		w.Header().Set("X-XSS-Protetion", "0")
+		w.Header().Set("X-XSS-Protection", "0")
 
 		next.ServeHTTP(w, r)
 	})
