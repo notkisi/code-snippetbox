@@ -24,6 +24,9 @@ func (app *application) routes() http.Handler {
 	})
 	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
+	// Test E2E Function
+	router.HandlerFunc(http.MethodGet, "/ping", ping)
+
 	dynamic := alice.New(app.sessionManager.LoadAndSave, noSurf, app.authenticate)
 
 	//unprotected routes
