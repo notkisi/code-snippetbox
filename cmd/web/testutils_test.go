@@ -2,11 +2,14 @@ package main
 
 import (
 	"bytes"
+	"html"
 	"io"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
+	"regexp"
 	"testing"
 	"time"
 
@@ -14,6 +17,16 @@ import (
 	"github.com/go-playground/form/v4"
 	"github.com/notkisi/snippetbox/internal/models/mocks"
 )
+
+var csrfTokenRE = regexp.MustCompile("<input type='hidden' name='csrf_token' value='(.+?)'>")
+
+func extractCsrfToken(t *testing.T, body string) string {
+	matches := csrfTokenRE.FindStringSubmatch(body)
+	if len(matches) < 2 {
+		t.Fatal("did not find csrf token in body")
+	}
+	return html.UnescapeString(string(matches[1]))
+}
 
 // Create a newTestApplication helper which returns an instance of our
 // application struct containing mocked dependencies.
@@ -66,6 +79,19 @@ func newTestServer(t *testing.T, h http.Handler) *testServer {
 // response status code, headers and body.
 func (ts *testServer) get(t *testing.T, urlPath string) (int, http.Header, string) {
 	rs, err := ts.Client().Get(ts.URL + urlPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rs.Body.Close()
+	body, err := io.ReadAll(rs.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rs.StatusCode, rs.Header, string(bytes.TrimSpace(body))
+}
+
+func (ts *testServer) post(t *testing.T, urlPath string, form url.Values) (int, http.Header, string) {
+	rs, err := ts.Client().PostForm(ts.URL+urlPath, form)
 	if err != nil {
 		t.Fatal(err)
 	}
